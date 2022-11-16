@@ -78,3 +78,85 @@ Se pueden configurar los estados y los header de respuesta con los valores de re
 Veremos como crear un nuevo recurso para ver, editar y eliminar un recurso creado, Para entender esto crearemos un recurso PlayCourses en el erchivo frescoplaycourses.py
 
 Se annadiran nuevos cursos al diccionario play_courses. Cada curso de Fresco play se identifica con su respectivo ID como llave
+
+## Parsing Requests (Analizando las peticiones)
+
+Ya hemos visto como construir una simple API REST en flask usando la extension de Flask-RESTful, tambien se ha visto como pasar informacion a una API REST con los metodos HTTP POST y PUT.
+
+En este tema veremos como validar la informacion enviada a travez de las peticiones HTTP usando el modulo reqparse de Flask_restful.
+
+Las utilidades del modulo  reqparse estan formadas basandose en el modulo argparse
+
+### Usando 'reqparse'
+
+Para usar reqparse, una instancia de la clase RequestParser se tiene que crear primer, depsues la informacion esperada se debe annadir al analizador parser creado. Muchos parametros como 'type', 'required', 'help' se pueden configurar cuando se agrega un argumento.
+
+El valor asociado con cualquier argumento puede ser accessado usando diccionarios, que regresa el metodo parse_args de la instancia creada
+
+A continuacion se muestra cun ejemplo donde se crea y se anade un argumento
+
+                from flask_restful import reqparse
+
+                parser = reqparse.RequestParser()
+                parser.add_argument('argument1', type=int, help='This argument must be an integer')
+                args = parser.parse_args() # 'args' is a dictionary
+
+Para entender mejor se define un recurso llamado SimpleInterest en el document simpleinteres.py
+
+### Enviando una peticion POST
+
+Ahora vamos a crear una peticion POST para esto nos dirigiimos al archivo accessing_si_app.py
+
+### Creando RequestParser
+
+Para verificar la informacion pasada por medio de las peticiones HTTP vamos a modificar la definicion del recurso SimpleInterest para esto se crea un nuevo archio llamado simpeinterest_with_reqparse.py donde se detalla como usar reqparse
+
+### Conbinando errores
+
+Por defecto RequestParser se aborta cuando encuentra el primer error de cualquier forma es posible que se convinen todos los error y se envien todos al cliente juntos.
+
+Lo anterior lo podemos lograr configurando a 'True' el parametro 'bundle_errors'  de la clase RequestParser mientras creamos su objeto como se muestra a continuacion:
+
+                parser = reqparse.RequestParser(bundle_errors=True)
+
+Enronce si corremos accessing_si_app.py la respuesta seria mostar dos erroers al mismo tiempo
+
+        400 b'{"message": {"period": "No. of Years must be an integer", "principal_amount": "Principal amount must be a number"}}\n'
+
+### Limitando el valor de un argumento
+
+Si un argumento necesita de tomavar solo un valor de una lista de opciones, esto lo podemos hacer con el parametro choices del metodo 'add_argument'
+
+Un ejemplo de seria asociar cuatro opciones al argumento year como se muestra
+
+                from flask_restful import reqparse
+
+                parser = reqparse.RequestParser()
+                parser.add_argument(
+                'year',
+                choices=('2017', '2018', '2019', '2020'),
+                help='Bad choice'
+                )
+
+### Herencua de parser o herencia del analizador sintatico
+
+Muchas veces vamos a definir un diferente parser para cada recurso definido
+Algunos de los recursos podrian tener argumentos en comun
+En tal escenario es buena practica definir un parser padre que contenga los argumentos detallados
+El parser padre puede entonce ser extendido usando el metodo 'copy'
+Cualquier argumento en el parser padre puede ser sobrescribido usando el metodo 'replace_argument' y puede ser completamente removido usando el metodo 'revome_argument'
+
+En el siguiente ejemplo parser es una instacia de 'RequestParser' y una copia de el, parser_copy se crea
+
+'parser_copy' se amplia al anadir un nuevo argumento (arg2) y configurando 'arg1' al string requerido
+
+
+                from flask_restful import reqparse
+
+                parser = reqparse.RequestParser()
+                parser.add_argument('arg1', type=int)
+
+                parser_copy = parser.copy()
+                parser_copy.add_argument('arg2', type=int)
+
+                parser_copy.replace_argument('arg1', required=True)
