@@ -1,2 +1,15 @@
-course_content/venv/
-hands_on/basic_CRUD_ope/venv
+/venv
+*/venv
+*/*/venv
+*/*/*/venv
+*/*/*/*/venv
+*/*/*/*/*/venv
+*/*/*/*/*/*/venv
+
+/__pycache__
+*/__pycache__
+*/*/__pycache__
+*/*/*/__pycache__
+*/*/*/*/__pycache__
+*/*/*/*/*/__pycache__
+*/*/*/*/*/*/__pycache__
