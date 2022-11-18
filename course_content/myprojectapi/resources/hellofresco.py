@@ -1,16 +1,9 @@
-from flask import Flask
 from flask_restful import Resource, Api, request, abort
-
-app = Flask(__name__)
-api = Api(app)
 
 #Esta clase contiene los metodo disponibles
 class HelloFresco(Resource):
     def get(self):
         return ({'message': 'Welcome to fresco Play!!!'}, 201, {'response_header1': 'some-message'})
-
-#Se mapea la clase en la direccion '/', '/home/' y  '/index/'
-api.add_resource(HelloFresco, '/', '/home/', '/index/')
 
 
 # Se crea un metodo para anadir un nuevo recurso, ver un recurso
@@ -51,9 +44,3 @@ class PlayCourses(Resource):
             abort(404, message=f"Course_Id {course_id} doesn't exist")
         play_courses[course_id] = request.form['course_name']
         return {course_id: play_courses[course_id]}
-
-
-api.add_resource(PlayCourses, '/Courses/', '/Courses/<int:course_id>')
-
-if __name__ == '__main__':
-    app.run()

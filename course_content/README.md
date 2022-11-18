@@ -150,7 +150,6 @@ En el siguiente ejemplo parser es una instacia de 'RequestParser' y una copia de
 
 'parser_copy' se amplia al anadir un nuevo argumento (arg2) y configurando 'arg1' al string requerido
 
-
                 from flask_restful import reqparse
 
                 parser = reqparse.RequestParser()
@@ -160,3 +159,193 @@ En el siguiente ejemplo parser es una instacia de 'RequestParser' y una copia de
                 parser_copy.add_argument('arg2', type=int)
 
                 parser_copy.replace_argument('arg1', required=True)
+
+## Usando el modulo 'fields'
+
+Por defecto si un iterable regresado por cualquier metodo definido en una clase Resource es una estructura de datos de python y se renderiza como tal
+
+De cualquier forma si otro objeto es regresado el renderizado no podria ser el esperado
+
+Por esta razon Flask-RESTful contiene el modulo fields para especificar la estructura de la respuesta
+
+La estructura de la respuesta debe ser o un diccionario o un diccionario ordenado
+
+Algunos de los tipos de field disponicles son:
+
+        fields.Raw              -Basado en clase field del cual fields personalizados son etregados
+        fields.String           -Da una estring como salida
+        fields.Float            -Da un flotante como salida
+        fields.Integer          -Da un entero como salida
+        fields.Boolean          -Da un booleano como salida
+        fields.Url              -Da una URL en forma de string como salida
+        fields.DateTime         -Regresa una string formateada en UTC
+
+### Usando metodos 'marshal'
+
+Flask-RESTful tambien viene con metodos como marshal, marshal_with y marshal_with_field, los cuales son utiles para filtrar la informacion de respuesta de los valores regresados de los metodos.
+
+el metodo 'marshal' de paquete Flask-RESTful nos da la habilidad de filtrar informacion de campos especificos en el formato deseado
+el metodo 'marshal' toma cualquier diccionario, lista u objeto como informacion de entrada y un diccionario o field, para que este dispnible a la salida y filtra la informacion basandose en dichos fields o campos
+
+Un ejemplo de usar 'marshal' en la shell de flask se muestra a continuacion, esta filtra siki ek nombre del campo del diccionario data
+
+        >>> from flask_restful import marshal
+        >>> data = {'age':36, 'name':'Philiphs'}
+        >>> from flask_restful import fields
+        >>> required_fields = {'name':fields.Raw}
+        >>> marshal(data, required_fields)
+        OrderedDict([('name', 'Philiphs')])
+
+### Usando 'marshal_with'
+
+Adicionamente al metodo 'marshal' tambien se puede usar el decorador 'marshal_with' para clasificar el objeto regresado de un metodo con fields especificados. En el siguiente ejemplo se decora el metodo 'get' con 'marshal_with'
+
+        >>> from flask_restful import fields, marshal_with
+        >>> required_fields = { 'name': fields.Raw }
+        >>> @marshal_with(required_fields)
+        ... def get():
+        ...     return { 'age': 36, 'name': 'Philips' }
+        ...
+        >>> get()
+        OrderedDict([('name', 'Philips')])
+
+### Usando 'marshal_with_field'
+
+'marshal_with_field' es otro decoradorel cual formatea los valores regresados de los metodos con un solo campo. En el siguiente ejemplo, marshal_with_field convierte todos los valores a enteros
+
+        >>> from flask_restful import marshal_with_field, fields
+        >>> @marshal_with_field(fields.Integer)
+        ... def get():
+        ...     return '2', 3.0, 5
+        ...
+        >>> get()
+        (2, 3, 5)
+
+### Formateando un ejemplo de salida
+
+Ahora entederemos como formatear un respuesta usando fields y marshal_with en el archivo simpleinterest_marshal.py
+
+### Renombrando atributos
+
+Cualquier nombre de campo que se muestra al usuario puede ser cambiado desde su campo interno al ser renombrado. Re nombrar un campo interno se puede lograe al configurar el valor del parametro 'attribute' o cualquier tipo de campo al nuevo nombre publico del campo
+
+Un ejemplo de usar 'attribute' se muestra a continuacion, este renombra el campo 'private_name' a 'public_name'
+
+        fields = {
+        'public_name': fields.String(attribute='private_name'),
+        'address': fields.String,
+        'age':fields.Integer,
+        }
+
+### Campos personalizados
+
+El modulo 'fields' tambien se puede usar para crear fields personalizados
+Un field personalizado tiene que ser derivado de la clase 'fields.Raw' y debe de contener una definicion del metodo 'format'
+
+En el siguiente ejemplo la clase 'LowerCase' se deriva de la clase 'fields.Raw' y su metodo 'format' tranforma el valor de una entrada en letras minusculas:
+
+        class LowerCase(fields.Raw):
+        def format(self, value):
+                return value.lower()
+
+## Organizando nuestra app Flask-RESTful
+
+Una aplicacion Flask-RESTful puede ser organizada de multiples formas
+En este capitulo veremos una forma de organizar un app la cual es escalable tambien con aplicaciones grandes
+En general un app de projecto se divide en tres secciones: 'routes', 'resources' y 'common'
+Los archivos en 'routes; contiene la aplicacion y las definiciones de varias rutas
+Los archivos en la seccion'resources' contienen definiciones de varios recursos
+Finalmente los archivos en la seccion 'common' contiene definiciones de funciones usadas a travez de la aplicacion
+
+### Estructurando nuestra app
+
+Ahora vamos a organizar los archivos hellofresco.py, frescoplaycourses.py y simpleinterest.py en la estructura que se muestra a continuacion:
+
+        myprojectapi/
+        __init__.py
+        app.py
+        resources/
+                __init__.py 
+                hellofresco.py 
+                frescoplaycourses.py
+                simpleinterest.py
+        common/
+                __init__.py
+                utils.py
+
+La reccion 'routes' contiene el archivo app.py. Y debajo se muestra el contenido de ella, la cual define la aplicacion Flask, app y la api resful 'Api'. La api esta ligaada a la aplicacion app. Mas recurso son importados desde la carpeta 'resources' y se anaden a la aplicacion
+
+        from flask import Flask
+        from flask_restful import Api
+        from myprojectapi.resources.hellofresco import HelloFresco
+        from myprojectapi.resources.frescoplaycourses import PlayCourses
+        from myprojectapi.resources.simple_interest import SimpleInterest
+
+        app = Flask(__name__)
+
+        api = Api(app)
+        api.add_resource(HelloFresco, '/')
+        api.add_resource(PlayCourses, '/Courses/', '/Courses/<int:course_id>')
+        api.add_resource(SimpleInterest, '/simpleinterest/')
+
+### Entendiendo la seccion 'resources'
+
+Los archivos que contienen la definicion de los recursos viven dentro de la carpeta 'myprojectapi/resources'
+
+Se remueven las siguientes lineas de los tres archivos en resouces:
+
+        -Lineas donde se definen la aplicacion flask ejemplo app = Flask(__name__)
+        -Lineas donde se define a la api flsak restful ejemplo api = Api(app)
+        -Lineas que anaden a la ai el recurso por ejemplo el metodo add_resource
+        -El bloque de lineas usadas para correr la aplicacion ejemplo app.run().
+
+Los recursor requeridos pueden ser importados en 'myprojectapi/app.py' y ser usados
+
+Cualquier recurso puede ser anadido directamente en la carpeta 'resources'
+
+Ahora podemos correr nuestro web server usando el comando 'flask run' despues de exportar la variable FLASK_APP
+
+### Usando App Factory
+
+Para usar la funcion de Flask App Factory basta definir un metodo llamado 'create_app' en el cual se define la aplicacion, se instancia la variable api, y se registan las blueprint y por ultimo se regresa la aplicacion para mas detalles de como hacer lo anterior revisar el documento 'app.py'
+
+### Usando Blueprints
+
+Ahora vamos a entender como asociar una Api con una Blueprint
+
+Primeramente definimos una blueprint llamada 'playcourses_bp' u una Api llamada 'playcourses_api' dentro de nuestro archivo 'resouces/frescoplatcourses.py' como se muestra en seguida
+
+Una vez registrata nuestra blueprint en nuestro archivo y dada de alta a nuestra api podemos registrar dicha blueprint con nuestra aplicacion  modifcando lo sigionete en el archivo app.py
+
+### Definiendo parametros contructores
+
+En caso de que un recurso tenga dependencias externas, dichas dependencias se pueden pasar al metod constructor de un recurso
+
+En el siguinte ejemplo se muestra ka definicion de un Recurso ejemplo llamado 'Task'. El metodo __init__.py inicializa seld.db a un objeto de conexion basede datos y un metodo 'get' que usa el metodo 'execute' asociado al objeto de conexion
+
+        from flask_restful import Resource
+
+        class Task(Resource):
+        def __init__(self, **kwargs):
+                self.db = kwargs['dbconnection']
+
+        def get(self):
+                return self.db.execute()
+
+La forma en pasar el objeto de conexion a base de datos a 'Task' se muestra en seguida
+
+        db_connection = db.Connection()
+
+        api.add_resource(TodoNext, '/next',
+        resource_class_kwargs={ 'dbconnection': db_connection })
+
+## Resumen
+
+En este curso hemos aprendifo los siguientes temas:
+
+        - Acerca de RESTful Web Services
+        - Definir un 'Resource' usando utilidades de la extension Flask-RESTful
+        - Realizar operaciones basicas CRUD en recursos al definir los metodos get, post, delete y put
+        - Validar la informacion de los argumentos enviados via peticiones POST o PUT
+        - Formatear las respuestas de salida de las pesticiones REST api
+        - Organizar el proyecto REST API
